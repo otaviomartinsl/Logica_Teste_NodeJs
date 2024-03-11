@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lógica Soluções - Teste Lista de Usuários</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #007bff; 
+        }
+        h2 {
+            color: #6c757d; 
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        button {
+            margin-top: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .actions button {
+            margin-left: 5px;
+        }
+        form {
+            margin-top: 20px;
+            text-align: center;
+        }
+        form input[type="text"], form input[type="email"] {
+            padding: 8px;
+            margin-right: 10px;
+        }
+
+        .search-container {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.search-container label {
+    margin-right: 10px;
+}
+
+.search-container input[type="text"] {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.search-container input[type="text"]:focus {
+    outline: none;
+    border-color: #007bff; 
+}
+
+
+.container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Lógica Soluções</h1>
+        <h2>Teste Lista de Usuários</h2>
+
+        <form id="addUserForm" onsubmit="addUser(event)">
+            <input type="hidden" id="userId"> 
+            <input type="text" id="firstName" placeholder="Nome">
+            <input type="text" id="lastName" placeholder="Sobrenome">
+            <input type="email" id="email" placeholder="Email">
+            <input type="text" id="phone" placeholder="Número de Celular">
+            <input type="text" id="password" placeholder="Senha">
+            <button type="submit">Adicionar Usuário</button>
+        </form>
+
+        <div class="search-container">
+            <label for="searchInput">Pesquisar:</label>
+            <input type="text" id="searchInput" placeholder="Pesquisar por nome ou email" oninput="searchUsers()">
+        </div>
+
+        <button onclick="fetchUsers()">Atualizar Usuários</button> 
+        <button onclick="saveUsersToCSV()">Salvar Usuários no CSV</button>
+
+        <table id="usersTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>Número de Celular</th>
+                    <th>Senha</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        
+    function searchUsers() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const rows = document.querySelectorAll('#usersTable tbody tr');
+
+        rows.forEach(row => {
+            const name = row.cells[1].textContent.toLowerCase();
+            const email = row.cells[2].textContent.toLowerCase();
+
+            if (name.includes(searchTerm) || email.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+        // Função para buscar usuários da API
+        function fetchUsers() {
+            fetch('/users')
+                .then(response => response.json())
+                .then(users => {
+                    const tableBody = document.querySelector('#usersTable tbody');
+                    tableBody.innerHTML = ''; // Limpar a tabela antes de adicionar novos usuários
+                    users.forEach(user => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${user.id}</td>
+                            <td>${user.first_name} ${user.last_name}</td>
+                            <td>${user.email}</td>
+                            <td>${user.phone_number}</td>
+                            <td>${user.password}</td>
+                            <td class="actions">
+                                <button onclick="editUser(${user.id}, '${user.first_name}', '${user.last_name}', '${user.email}', '${user.phone_number}', '${user.password}')">Editar</button>
+                                <button onclick="confirmDeleteUser(this)">Excluir</button>
+                            </td>
+                        `;
+                        tableBody.insertBefore(row, tableBody.firstChild); // Adicionar no topo da tabela
+                    });
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar usuários:', error);
+                });
+        }
+
+        // Função para salvar os usuários no arquivo CSV
+        function saveUsersToCSV() {
+    fetch('/save-users-to-csv')
+        .then(response => {
+            if (response.ok) {
+                console.log('Usuários salvos no arquivo CSV com sucesso');
+            } else {
+                console.error('Erro ao salvar usuários no arquivo CSV');
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao salvar usuários no arquivo CSV:', error);
+        });
+}
+
+        // Função para editar um usuário
+        function editUser(id, firstName, lastName, email, phone, password) {
+            document.getElementById('userId').value = id; 
+            document.getElementById('firstName').value = firstName;
+            document.getElementById('lastName').value = lastName;
+            document.getElementById('email').value = email;
+            document.getElementById('phone').value = phone;
+            document.getElementById('password').value = password;
+
+            const submitButton = document.querySelector('#addUserForm button[type="submit"]');
+            submitButton.textContent = 'Salvar Edição'; // Mudar o texto do botão
+            submitButton.onclick = function() {
+                if (confirm('Tem certeza que deseja confirmar?')) {
+                    saveEditedUser(event);
+                }
+            };
+        }
+
+        // Função para salvar a edição de um usuário
+        function saveEditedUser(event) {
+            event.preventDefault(); // Impedir o envio do formulário
+
+            const userId = document.getElementById('userId').value;
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('password').value;
+
+            // Atualizar os dados do usuário na tabela
+            const row = document.querySelector(`#usersTable tbody tr td:first-child`).parentNode;
+            row.innerHTML = `
+                <td>${userId}</td>
+                <td>${firstName} ${lastName}</td>
+                <td>${email}</td>
+                <td>${phone}</td>
+                <td>${password}</td>
+                <td class="actions">
+                    <button onclick="editUser(${userId}, '${firstName}', '${lastName}', '${email}', '${phone}', '${password}')">Editar</button>
+                    <button onclick="confirmDeleteUser(this)">Excluir</button>
+                </td>
+            `;
+
+            // Limpar os campos do formulário
+            document.getElementById('addUserForm').reset();
+            document.querySelector('#addUserForm button[type="submit"]').textContent = 'Adicionar Usuário'; // Mudar o texto do botão de volta
+        }
+
+        // Função para confirmar a exclusão do usuário
+        function confirmDeleteUser(button) {
+            if (confirm('Tem certeza que deseja excluir este usuário?')) {
+                // Encontrar a linha da tabela correspondente ao botão clicado
+                const row = button.parentNode.parentNode;
+                row.remove();
+            }
+        }
+
+        // Função para adicionar um novo usuário
+        function addUser(event) {
+            event.preventDefault(); // Impedir o envio do formulário
+
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('password').value;
+
+            // Criar um objeto representando o novo usuário
+            const newUser = {
+                first_name: firstName,
+                last_name: lastName,
+                email: email,
+                phone: phone,
+                password: password
+            };
+
+            // Adicionar o novo usuário à tabela 
+            const tableBody = document.querySelector('#usersTable tbody');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${Math.floor(Math.random() * 100)}</td>
+                <td>${firstName} ${lastName}</td>
+                <td>${email}</td>
+                <td>${phone}</td>
+                <td>${password}</td>
+                <td class="actions">
+                    <button onclick="editUser(${userId}, '${firstName}', '${lastName}', '${email}', '${phone}', '${password}')">Editar</button>
+                    <button onclick="confirmDeleteUser(this)">Excluir</button>
+                </td>
+            `;
+            tableBody.insertBefore(row, tableBody.firstChild);
+
+            // Limpar os campos do formulário após a adição do usuário
+            document.getElementById('addUserForm').reset();
+        }
+
+        // Chamar a função fetchUsers ao carregar a página
+        fetchUsers();
+    </script>
+</body>
+</html>
